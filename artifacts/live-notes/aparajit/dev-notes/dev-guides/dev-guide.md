@@ -17,6 +17,7 @@ System software for AJIT and APARAJIT: docs, pinned repos under `repos/`, and a 
 | Name | Description |
 |------|-------------|
 | `docs/` | LaTeX presentation, plans, transcripts |
+| `docs/pitch-deck-2026/` | Investor brief, Q&A, Beamer deck (`deck/`), reference index; check with `python3 tools/check_docs.py` |
 | `docs/m1-ajit-ubuntu16-setup-arm64mac.md` | Replicate native arm64 Ubuntu 16.04 AJIT toolchain + C-model CoRTOS baseline; pins `ajit-toolchain` `22206c994` and `ahir` `0816fb6d` |
 | `docs/m3-ajit-ubuntu24-buildroot2025-setup-arm64mac.md` | Replicate Ubuntu 24.04 + Buildroot 2025.02.18 SPARC gcc 13 + CoRTOS `001`/`050`/`100`/`150` on the C-model |
 | `repos/` | Toolchain, NuttX, TFLite Micro, and related forks |
@@ -25,6 +26,9 @@ System software for AJIT and APARAJIT: docs, pinned repos under `repos/`, and a 
 | `scripts/docker/` | Build/test helpers for `aparajit-docker` |
 | `nuttx-ajit.md` | Older NuttX + qemu-ajit handoff |
 | `docs/nuttx-on-ajit-qemu.md` | Build and boot NuttX on qemu-ajit (single core and SMP) |
+| `docs/porting-nuttx.md` | Layer-by-layer walkthrough of the NuttX AJIT port; checklist for porting other RTOSes to AJIT |
+| `docs/px4-on-nuttx-ajit-qemu.md` | Overall requirements to run PX4 over NuttX on qemu-ajit |
+| `docs/resnet50-metrics.md` | ResNet-50 int8 inference cost on Ajit: C-model cycles (per-layer harness + topology sum), exact qemu instruction anchor, process and logic, variant evaluation, ISA v2 vector estimate; earlier paper estimate kept |
 | `tflite-ajit.md` | Older TFLite Micro handoff (qemu-user / planned sparc-elf). How to run on qemu-ajit: `repos/ajit-toolchain/docs/tflite-on-qemu-ajit.md` |
 | `cortos/` | CoRTOS (co-operative RTOS) for AJIT SPARC V8; see `cortos/dev-guide.md` |
 | `machine/ajit1/` | Canonical AJIT-1 SoC definition (YAML + C header) for NuttX and bare-metal |
