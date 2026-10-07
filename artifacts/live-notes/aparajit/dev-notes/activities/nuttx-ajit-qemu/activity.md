@@ -2,7 +2,7 @@
 
 | Key | Value |
 |---|---|
-| status | Active |
+| status | Complete |
 | slug | nuttx-ajit-qemu |
 | branch | none |
 | ticket | none |
@@ -20,83 +20,70 @@ Out: deleting `repos/nuttx`; rewriting upstream NuttX authors; `aparajit-docker`
 
 # Background and Special Notes
 
-- Root dev-guide already treats NuttX-on-AJIT as stage-2. `cortos2-qemu` left NuttX out and proved the machine map.
-- Use the existing `ajit_base:1.0` / `ajit_build_dev:1.0` images from Complete `ajit-toolchain-setup` (Ubuntu 24.04, Buildroot 2025.02.18, `sparc-linux-gcc` 13.4.0, distro `python3`). Do not rebuild those images. Same container already builds cortos2, TFLite, and AHIR. It bind-mounts the toolchain repo at `/home/ajit/ajit-toolchain`.
-- `bb-dev-blocks/nuttx` `master` is `a31f7b7988` (63436 commits, original authors, no Anshuman). No `bb-dev-blocks` nuttx-apps repo.
-- `repos/nuttx` `main` is six Anshuman commits. Kernel checkout has two more, not on the fork. Live tree is a fresh clone. The bm3823 link fix (drop undefined `PRE_STACK_FRAME_*` uses; include `nuttx/spinlock.h`) is applied uncommitted on the toolchain `nuttx` tree. Do not cherry-pick the old Anshuman commits.
-- QEMU source `hw/sparc/ajit1.c` matches between repo-root `qemu-ajit-v1.0/` and `repos/ajit-toolchain/qemu-ajit-v1.0/`. Run the toolchain build's `qemu-system-sparc`.
+- Root dev-guide treats NuttX-on-AJIT as stage-2. `cortos2-qemu` proved the machine map and left NuttX out.
+- Images `ajit_base:1.0` / `ajit_build_dev:1.0` come from Complete `ajit-toolchain-setup` (Ubuntu 24.04, Buildroot 2025.02.18, `sparc-linux-gcc` 13.4.0). Do not rebuild. Container bind-mounts the toolchain repo at `/home/ajit/ajit-toolchain`.
+- `repos/nuttx` (old super-repo with Anshuman commits) is unused. Its commits were not cherry-picked. Removal is later work.
+- QEMU `hw/sparc/ajit1.c` matches between repo-root `qemu-ajit-v1.0/` and `repos/ajit-toolchain/qemu-ajit-v1.0/`. Run the toolchain build's `qemu-system-sparc`.
 
 # Current Design
 
-- Submodules: `repos/ajit-toolchain/nuttx` → `git@github-bb:bb-dev-blocks/nuttx.git` `master`. `repos/ajit-toolchain/apps` → `https://github.com/apache/nuttx-apps.git` at `bc0ed23a5dea42e9aa42dfccc372fe9f4654d10d` (sibling `../apps` from the kernel tree).
-- `repos/nuttx` stays on disk, unused by this activity. Removal is later.
-- New commits: author and committer `bb-dev-blocks <basicblocksdevelopers@gmail.com>`. Upstream authors stay. Live `nuttx` history has no Anshuman author or committer.
-- Chip `arch/sparc/src/ajit1/`, board `boards/sparc/ajit1/ajit1-qemu/` with `nsh` and `smp`, patterned on `s698pm-dkit`. Link origin `0x00100000`. UART0 `0xFFFF3200` (`ctrl +0x00`, `tx +0x04`, `rx +0x08`).
-- Build: `CROSSDEV=sparc-linux-` inside the existing `ajit_build_dev` container. Do not rebuild the image. Manual run: `./scripts/run-nuttx-ajit.sh nsh` (`-smp 1`) and `./scripts/run-nuttx-ajit.sh smp` (`-smp 2`). Quit: Ctrl-A then X. Scripted checks use TCP serial.
-- Doc: `docs/nuttx-on-ajit-qemu.md`. `nuttx-ajit.md` stays the old handoff.
+Shipped. Layer-by-layer walkthrough with snippets: `docs/porting-nuttx.md`.
+
+- Submodules in `repos/ajit-toolchain`: `nuttx` → `git@github-bb:bb-dev-blocks/nuttx.git`, branch `ajit_main` (fork `master` `a31f7b7988` + AJIT commits; port is `04c56692be`). `apps` → Apache nuttx-apps at `bc0ed23a5dea42e9aa42dfccc372fe9f4654d10d`. Toolchain commit `a7e584c07` adds both plus scripts. Doc commit in aparajit: `38844d9`.
+- Chip `arch/sparc/src/ajit1/`, cloned from `s698pm`. Board `boards/sparc/ajit1/ajit1-qemu/` with `nsh` and `smp` configs. Link and `CONFIG_RAM_START` `0x00100000`, 16 MiB.
+- Shared-code edits: `sparc_v8/Toolchain.defs` (`-mcpu=v8` for AJIT1); `sparc_v8/sparc_v8_swint1.c` calls `restore_critical_section` on restore/switch context (SMP lock fix, affects LEON SMP); `bm3823` link fix.
+- QEMU edit: `qemu-ajit-v1.0/hw/char/ajit1_uart.c` keeps `RX_FULL` while FIFO non-empty.
+- Invariants (must not break):
+  - CPU index = ASR29 `core*2 + thread` in `ajit1_head.S`, `ajit1_exceptions.S`, `ajit1_cpuindex.c` — all three agree.
+  - IRQ number = SPARC trap number; external PIL n = trap `0x10+n` (timer `0x1a`, IPI `0x1b`, UART `0x1c`).
+  - INTC control register is per accessing CPU. CPU0 owns timer/UART levels; secondaries enable IPI only (`ajit1_cpu_boot`).
+  - `g_cpu_present` / `g_cpu_release` stay in `.data` (CPU0 zeroes BSS while secondaries spin).
+  - QEMU starts all CPUs; secondaries park in `__start`. Absent CPUs → `ajit1_mark_offline` (one image, `CONFIG_SMP_NCPUS=4`, runs at `-smp 1..4`).
+  - `ajit1-atomic.c` provides `__atomic_*_4` via `ldstub`; do not link `libatomic` (pthread mutex traps before syscalls exist).
+  - Never `-mcpu=leon3` for AJIT.
+- Run: `./scripts/run-nuttx-ajit.sh nsh|smp` (quit Ctrl-A X). Scripted checks use TCP serial.
 
 # Current Plan
 
-1. Add both submodules. Confirm `nuttx` `origin` is the bb-dev-blocks fork and `git log` has no Anshuman.
-2. Cross-compile `s698pm-dkit:nsh`, `s698pm-dkit:smp`, `xx3823:nsh` in `ajit_build_dev`. Fix the bm3823 build only if that config fails.
-3. Add `ajit1-qemu:nsh`. Scripted `-smp 1` must show `help` and `hello`. Manual command attaches a terminal.
-4. Add `ajit1-qemu:smp`. Scripted `-smp 2` and `-smp 4` must show every extra CPU online. Manual `-smp 2` accepts `ps`.
-5. One e2e script runs the LEON builds plus the three qemu checks. Doc covers checkout, identity, build, scripted runs, and the manual terminal.
+Done. No open plan.
 
 # Milestones
 
 1. [x] Toolchain submodules track the fork, with no Anshuman in `nuttx` history
-   - tests:
-     - `nuttx` origin URL is `git@github.com:bb-dev-blocks/nuttx.git` (or `git@github-bb:bb-dev-blocks/nuttx.git`)
-     - `apps` submodule present at the pinned sha
-     - author and committer lines contain no `Anshuman`
    - evidence:
-     - `git -C repos/ajit-toolchain submodule status`
-     - `git -C repos/ajit-toolchain/nuttx remote get-url origin`
+     - `git -C repos/ajit-toolchain submodule status nuttx apps`
+     - `git -C repos/ajit-toolchain/nuttx remote get-url origin` → `git@github-bb:bb-dev-blocks/nuttx.git`
      - `git -C repos/ajit-toolchain/nuttx log --format='%an <%ae>%n%cn <%ce>' | rg -i anshuman` (no output)
 
 2. [x] Three LEON configs cross-compile in `ajit_build_dev`
-   - tests:
-     - `s698pm-dkit:nsh`, `s698pm-dkit:smp`, `xx3823:nsh` each produce `ELF 32-bit MSB SPARC`
-   - evidence:
-     - inside `ajit_build_dev`: `./scripts/test-nuttx-ajit.sh leon`
+   - evidence: inside `ajit_build_dev`: `./scripts/test-nuttx-ajit.sh leon` (`OK s698pm-dkit:nsh`, `OK s698pm-dkit:smp`, `OK xx3823:nsh`)
 
 3. [x] `ajit1-qemu:nsh` at `-smp 1` answers `help` and `hello`; manual terminal command exists
-   - tests:
-     - scripted UART contains `nsh>` command output for `help` and `hello`
-     - `./scripts/run-nuttx-ajit.sh nsh` is the interactive terminal (no timeout harness)
-   - evidence:
-     - inside `ajit_build_dev`: `./scripts/test-nuttx-ajit.sh nsh`
-     - `./scripts/run-nuttx-ajit.sh nsh` (manual: `help`, `hello`, Ctrl-A X)
+   - evidence: `./scripts/test-nuttx-ajit.sh nsh` (`OK ajit1-qemu:nsh`); manual `./scripts/run-nuttx-ajit.sh nsh`
 
 4. [x] `ajit1-qemu:smp` brings up every CPU at `-smp 2` and `-smp 4`
-   - tests:
-     - `-smp 2`: CPU1 online on UART
-     - `-smp 4`: CPU1, CPU2, CPU3 online on UART
-     - manual `-smp 2`: `ps` at `nsh>`
-   - evidence:
-     - inside `ajit_build_dev`: `./scripts/test-nuttx-ajit.sh smp`
-     - `./scripts/run-nuttx-ajit.sh smp` (manual, `-smp 2`)
+   - evidence: `./scripts/test-nuttx-ajit.sh smp` (`OK ajit1-qemu:smp -smp 2` with `ps`; `OK ajit1-qemu:smp -smp 4`); manual `./scripts/run-nuttx-ajit.sh smp`
 
 5. [x] End-to-end: LEON builds, single-core NSH, both SMP widths, and the process doc
-   - tests:
-     - e2e: milestones 2–4 scripted checks pass in one run
-     - doc exists and names the manual `help` / `hello` / `ps` session
-   - evidence:
-     - inside `ajit_build_dev`: `./scripts/test-nuttx-ajit.sh`
-     - `test -f docs/nuttx-on-ajit-qemu.md`
+   - evidence: inside `ajit_build_dev`: `./scripts/test-nuttx-ajit.sh` — passed at close (all five OK lines); `test -f docs/nuttx-on-ajit-qemu.md`; `test -f docs/porting-nuttx.md`
 
 # Next Steps
 
-1. Commit when this activity is closed. Nothing else is open.
+Minor-fix runway:
+
+1. Fastest check after any edit: inside `ajit_build_dev`, `./scripts/test-nuttx-ajit.sh nsh` (~1 min), then `smp`, then full run (~4 min).
+2. `docs/porting-nuttx.md` is untracked in aparajit; commit when the user asks.
+3. `repos/ajit-toolchain` branch `marshal_updates` has no upstream; `a7e584c07` may be unpushed.
+4. Known shortcuts to revisit if they matter: single global atomic lock (`ajit1-atomic.c`); one shared offline TCB (`ajit1_cpustart.c`); device IRQs only on CPU0.
+5. `docs/nuttx-on-ajit-qemu.md` table still says fork branch `master`; submodule actually follows `ajit_main`.
 
 # References
 
-- `machine/ajit1/ajit1-machine.yaml` — context-only. Learned: RAM link `0x00100000`, UART0 `0xFFFF3200`, machine `ajit1_generic`, CPU `AJIT1`, NuttX port not started.
+- `machine/ajit1/ajit1-machine.yaml` — context-only. Learned: RAM link `0x00100000`, UART0 `0xFFFF3200`, machine `ajit1_generic`, CPU `AJIT1`.
 - `machine/ajit1/include/ajit1_machine.h` — context-only. Learned: C constants for RAM, UART register offsets, and the qemu machine name.
 - `repos/ajit-toolchain/os/rtos/cortos2/src/cortos2/sys/qemu.py` — context-only. Learned: run argv `-M ajit1_generic -cpu AJIT1 -smp N -m 128M -serial stdio -nographic -kernel`, SMP cap 4.
 - `repos/ajit-toolchain/docker/ajit_build_dev/run.sh` — context-only. Learned: bind-mount of the whole toolchain repo at `/home/ajit/ajit-toolchain`.
-- `repos/ajit-toolchain/.gitmodules` — context-only. Learned: existing submodule pattern is `ahir` and `tflite-micro` as top-level paths with `git@github.com:bb-dev-blocks/...`.
+- `repos/ajit-toolchain/.gitmodules` — context-only. Learned: existing submodule pattern is top-level paths with `git@github.com:bb-dev-blocks/...`.
 - `nuttx-ajit.md` — context-only. Learned: stage-1 LEON configs and the old aparajit-docker path. This activity does not use that Docker path.
-- `.dev-notes/activities/ajit-toolchain-setup/activity.md` — context-only. Learned: shipped image is Ubuntu 24.04 + Buildroot 2025.02.18 (`sparc-linux-gcc` 13.4.0, distro `python3` 3.12.3). Reuse `ajit_base:1.0` and `ajit_build_dev:1.0`; do not rebuild them. Later cortos2, TFLite, and AHIR builds use this same image.
+- `.dev-notes/activities/ajit-toolchain-setup/activity.md` — context-only. Learned: reuse `ajit_base:1.0` and `ajit_build_dev:1.0`; do not rebuild them.
 - `.dev-notes/activities/cortos2-qemu/activity.md` — context-only. Learned: qemu parameters and that NuttX was explicitly out of that activity.
