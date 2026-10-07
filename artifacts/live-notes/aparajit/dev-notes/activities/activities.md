@@ -37,3 +37,11 @@ Build and run NuttX on qemu-ajit from nuttx and apps submodules inside repos/aji
 ## tflite-nuttx: TFLite on single-core NuttX
 
 Run hello_world, micro_speech, person_detection, and int8 ResNet-50 from `/tflite/` on single-core NuttX (`ajit1-qemu:tflite`). An NSH path picks one stored input and prints the result. How-to: `repos/ajit-toolchain/docs/tflite-on-nuttx.md`. `nsh` and `smp` stay unchanged.
+
+## drone-pitch-deck: Drone pitch deck 2026 (Ajit + Apara)
+
+Refine agent-drafted drone silicon pitch docs into an investor package for a seed round: verified references and market study, two-scenario cost model, concrete MVPs, investor brief and Q&A (India first, Europe later), a professional Beamer/TikZ deck and speaker notes. Replanned: single 28 nm Ajit + Apara SoC at 800 MHz, MobileNetV3 focus, Agam Robotics and ideaForge partners, leaner costs (~₹13–20 Cr).
+
+## resnet50-cortos2-cmodel: ResNet-50 on cortos2 and the Ajit C-model: cycles and metrics
+
+Fix a C-model metric set from cortos2 example_001 and tflite hello_world, then estimate C-model cycles for one int8 ResNet-50 inference by measuring each distinct layer configuration (resnet50_layers harness, cropped rows), summing by topology, and cross-checking with a qemu libinsn instruction count; process documented in docs/resnet50-metrics.md. Harness reusable for future kernel variants (KernelRunner, golden checksums, compare.py); last step estimates ISA v2 vector-instruction speedup analytically. Adds docs/tflite-on-cortos2.md, a qemu and C-model run guide for all cortos2 TFLM examples. First measured CNN performance baseline on Ajit; optimizations out of scope.
