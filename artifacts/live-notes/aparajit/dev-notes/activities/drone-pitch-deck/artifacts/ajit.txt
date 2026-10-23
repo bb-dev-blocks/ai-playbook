@@ -1,0 +1,76 @@
+--------------------------------
+AJIT processor vital statistics
+--------------------------------
+
+
+	1. ISA: Sparc V8
+		1.1 32-bit ISA with 64-bit load/store
+			floating point 32, 64 bit support.
+		1.2 custom extension to Sparc V8 ISA with 
+			64-bit vector instructions supporting
+			8/16/32/64 bit int/float operations. 
+
+
+	2. Processor family
+		2.1 single core, single cpu
+			2.1.1 pure Sparc V8 ISA  (1x1x32)
+			2.1.2 Sparc V8 with extensions as 
+				listed abve (1x1x64)
+		2.2  single core, dual cpu (1x1x32, 1x1x64)
+		2.3  dual core, single cpu per core, (2x1x32, 2x1x64)
+		2.4  dual core, dual cpu per core, (2x2x32, 2x2x64)
+		2.5  quad core, single cpu per core, (4x1x32, 4x1x64)
+		2.6  quad core, dual cpu per core, (4x2x32, 4x2x64).
+		2.7  all validated on FPGA
+
+	3. Features
+		3.1 Memory management unit.
+		3.2 Pipelined floating point unit (single/double precision
+			with hardware divider and square-root).
+		3.3 Debug support unit with GDB remote debug support.
+		3.4 L1, L2 caches.
+
+	4. Performance
+		3.1 2.46 DMIPS/MHz, 2.4 Coremarks/MHz, 0.6MFLOPS/MHz.
+		3.2 Clock frequency 16nm technology: 1.2 GHz (projected).
+		3.3 Clock frequency 28nm technology: 750 MHz (projected).
+		3.4 Power dissipation 16nm, 28nm technology: 100mW (1x1x32, 1x1x64).
+
+	5. ASIC story
+		3.1  1x1x32 implemented as part of IITB NAVIC SOC 
+			in 65 nm technology.
+		3.2  AJIT processor + Positioning + Accelerator
+			in 16nm technology (planning in progress).
+
+	6. Software
+		6.1 bare metal
+		6.2 cortos
+		6.3 nuttx
+		6.4 tensor flow lite
+		6.5 redkill OS
+		6.6 linux
+
+	7. Accelerator (APARA)
+		7.1 8-way VLIW with 4/8/16/32/64 bit int/float
+		7.2 vector instructions
+		7.3 assembler
+		7.4 speedup on computation kernels:
+			8-bit matrix mult  65X  relative to 1x1x32 AJIT
+			8-bit dot product  200X relative to 1x1x32 AJIT
+			1024 double precision FFT  9X relative to 1x1x32 AJIT
+
+
+	8. Embedded compute SOC APARAJIT
+		8.1 Micro:  dual core AJIT, 1 accelerator engine.
+			-- UAV, Robotics
+			-- Inference engines 100M to 1G parameters.
+			-- Running on FPGA
+		8.2 Mini :  quad core AJIT, 2 accelerator engines.
+			-- High performance signal processing
+			-- Radio, 6G appliances
+			-- Inference engines 16G parameters.
+			-- FPGA prototype in 3 months.
+		8.3 Mega :  64-core AJIT,   64 accelerator engines (concept).
+			-- Edge supercomputing
+			-- training
+			-- 1T parameters

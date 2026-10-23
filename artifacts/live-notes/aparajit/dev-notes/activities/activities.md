@@ -40,7 +40,7 @@ Run hello_world, micro_speech, person_detection, and int8 ResNet-50 from `/tflit
 
 ## drone-pitch-deck: Drone pitch deck 2026 (Ajit + Apara)
 
-Refine agent-drafted drone silicon pitch docs into an investor package for a seed round: verified references and market study, two-scenario cost model, concrete MVPs, investor brief and Q&A (India first, Europe later), a professional Beamer/TikZ deck and speaker notes. Replanned: single 28 nm Ajit + Apara SoC at 800 MHz, MobileNetV3 focus, Agam Robotics and ideaForge partners, leaner costs (~₹13–20 Cr).
+Refine agent-drafted drone silicon pitch docs into an investor package for a seed round: verified references and market study, two-scenario cost model, concrete MVPs, investor brief and Q&A (India first, Europe later), a professional Beamer/TikZ deck and speaker notes. Replanned: single 28 nm Ajit + Apara SoC at 750 MHz, MobileNetV3 focus, Agam Robotics and ideaForge partners, leaner costs (~₹14–21 Cr).
 
 ## resnet50-cortos2-cmodel: ResNet-50 on cortos2 and the Ajit C-model: cycles and metrics
 
