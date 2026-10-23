@@ -18,6 +18,7 @@ System software for AJIT and APARAJIT: docs, pinned repos under `repos/`, and a 
 |------|-------------|
 | `docs/` | LaTeX presentation, plans, transcripts |
 | `docs/pitch-deck-2026/` | Investor brief, Q&A, Beamer deck (`deck/`), reference index; check with `python3 tools/check_docs.py` |
+| `docs/pixhawk-standard/` | Verified, layered report on the Pixhawk open standards (`report.md`, PDF via `./build.sh`), 86-row `verification-log.md`, TikZ `figures/`, `check_report.py` (run before sharing). Activity: `.dev-notes/activities/pixhawk-standard/` |
 | `docs/m1-ajit-ubuntu16-setup-arm64mac.md` | Replicate native arm64 Ubuntu 16.04 AJIT toolchain + C-model CoRTOS baseline; pins `ajit-toolchain` `22206c994` and `ahir` `0816fb6d` |
 | `docs/m3-ajit-ubuntu24-buildroot2025-setup-arm64mac.md` | Replicate Ubuntu 24.04 + Buildroot 2025.02.18 SPARC gcc 13 + CoRTOS `001`/`050`/`100`/`150` on the C-model |
 | `repos/` | Toolchain, NuttX, TFLite Micro, and related forks |

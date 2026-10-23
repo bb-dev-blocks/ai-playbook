@@ -45,3 +45,7 @@ Refine agent-drafted drone silicon pitch docs into an investor package for a see
 ## resnet50-cortos2-cmodel: ResNet-50 on cortos2 and the Ajit C-model: cycles and metrics
 
 Fix a C-model metric set from cortos2 example_001 and tflite hello_world, then estimate C-model cycles for one int8 ResNet-50 inference by measuring each distinct layer configuration (resnet50_layers harness, cropped rows), summing by topology, and cross-checking with a qemu libinsn instruction count; process documented in docs/resnet50-metrics.md. Harness reusable for future kernel variants (KernelRunner, golden checksums, compare.py); last step estimates ISA v2 vector-instruction speedup analytically. Adds docs/tflite-on-cortos2.md, a qemu and C-model run guide for all cortos2 TFLM examples. First measured CNN performance baseline on Ajit; optimizations out of scope.
+
+## pixhawk-standard: Pixhawk standards explainer
+
+Verify the Pixhawk standards and keep one source-tagged report with a claim log. Add a planner slide deck, aligned with a new part of that report, showing what to plan from the APARAJIT Micro FPGA prototype to a minimal autopilot module, including how to prepare PX4 hardware-in-the-loop tests. The deck does not run those tests.
